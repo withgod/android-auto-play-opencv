@@ -4,6 +4,9 @@ from time import sleep
 import os
 import logging
 
+import cv2
+import numpy
+
 logger = logging.getLogger(__name__)
 
 class AapoManager:
@@ -162,10 +165,14 @@ class AapoManager:
 
         # フォルダが指定してあれば、作成
         if len(dirname) != 0: os.makedirs(dirname, exist_ok=True)
-        
-        # キャプチャ画像保存
-        with open(fileName, mode='wb') as f:
-            f.write(self.adbl.screenImg)
+
+        img = self.adbl.screenImg
+        if isinstance(img, numpy.ndarray):
+            # raw モード: ndarray を PNG として書き出す
+            cv2.imwrite(fileName, img)
+        else:
+            with open(fileName, mode='wb') as f:
+                f.write(img)
 
 
         

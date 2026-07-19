@@ -38,6 +38,8 @@ class MatchTemplateLib():
 
         if _screenshot is not None:
             self.img = cv2.imread(_screenshot, 0)
+        elif isinstance(_img, numpy.ndarray):
+            self.img = cv2.cvtColor(_img, cv2.COLOR_BGR2GRAY) if _img.ndim == 3 else _img
         else:
             self.img = cv2.imdecode(numpy.frombuffer(_img, numpy.uint8), 0)
 

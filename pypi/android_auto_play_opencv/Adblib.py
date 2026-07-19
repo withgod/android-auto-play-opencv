@@ -1,5 +1,10 @@
+import os
+import struct
 import subprocess
 import logging
+
+import cv2
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +61,26 @@ class Adblib:
 
     def screencap(self):
         # 画面キャプチャ
+        if os.environ.get('AAPO_RAW_SCREENCAP') == '1':
+            try:
+                self._screencap_raw()
+                return
+            except Exception as e:
+                logger.warning('raw screencap failed (%s), falling back to PNG' % e)
+        self._screencap_png()
+
+    def _screencap_png(self):
         self.screenImg = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap', '-p'])
+
+    def _screencap_raw(self):
+        buf = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap'])
+        w, h, fmt = struct.unpack_from('<III', buf, 0)
+        if fmt != 1:
+            raise ValueError('Unexpected screencap format: %d' % fmt)
+        # Android バージョンによりヘッダが12/16バイト変わるため、バッファ長から逆算してオフセットを求める
+        off = len(buf) - w * h * 4
+        img = np.frombuffer(buf, np.uint8, count=w * h * 4, offset=off).reshape(h, w, 4)
+        self.screenImg = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
 
     def kill(self):
         subprocess.call([self.adbpath + 'adb', 'kill-server'])

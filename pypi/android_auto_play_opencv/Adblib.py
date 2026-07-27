@@ -8,6 +8,10 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# adbコマンドが端末側の一時的な無応答に巻き込まれて無期限にブロックしないための上限。
+# 通常のinput/screencap系コマンドは数秒以内に完了するため、十分な余裕を持たせた値。
+ADB_TIMEOUT_SECONDS = 20
+
 class Adblib:
     
     adbpath: str = ''
@@ -24,7 +28,7 @@ class Adblib:
         self.adbpath = _adbpath
 
         try:
-            results = subprocess.check_output([self.adbpath + 'adb', 'devices'])
+            results = subprocess.check_output([self.adbpath + 'adb', 'devices'], timeout=ADB_TIMEOUT_SECONDS)
         except FileNotFoundError:
             logger.error('adb.exe が見つかりません。（' + self.adbpath + 'adb.exe' + '）')
             exit()
@@ -45,19 +49,19 @@ class Adblib:
         logger.info(self.device)
 
     def inputtext(self, _message):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'text', _message])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'text', _message], timeout=ADB_TIMEOUT_SECONDS)
 
     def inputkeyevent(self, _keyevent):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'keyevent', str(_keyevent)])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'keyevent', str(_keyevent)], timeout=ADB_TIMEOUT_SECONDS)
 
     def touch(self, _x, _y):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'tap', str(_x), str(_y)])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'tap', str(_x), str(_y)], timeout=ADB_TIMEOUT_SECONDS)
 
     def longTouch(self, _x, _y, _msec):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'swipe', str(_x), str(_y), str(_x), str(_y), str(_msec)])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'swipe', str(_x), str(_y), str(_x), str(_y), str(_msec)], timeout=ADB_TIMEOUT_SECONDS + _msec / 1000)
 
     def swipeTouch(self, _x1, _y1, _x2, _y2, _msec):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'swipe', str(_x1), str(_y1), str(_x2), str(_y2), str(_msec)])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'input', 'touchscreen', 'swipe', str(_x1), str(_y1), str(_x2), str(_y2), str(_msec)], timeout=ADB_TIMEOUT_SECONDS + _msec / 1000)
 
     def screencap(self):
         # 画面キャプチャ
@@ -70,10 +74,10 @@ class Adblib:
         self._screencap_png()
 
     def _screencap_png(self):
-        self.screenImg = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap', '-p'])
+        self.screenImg = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap', '-p'], timeout=ADB_TIMEOUT_SECONDS)
 
     def _screencap_raw(self):
-        buf = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap'])
+        buf = subprocess.check_output([self.adbpath + 'adb', '-s', self.device, 'exec-out', 'screencap'], timeout=ADB_TIMEOUT_SECONDS)
         w, h, fmt = struct.unpack_from('<III', buf, 0)
         if fmt != 1:
             raise ValueError('Unexpected screencap format: %d' % fmt)
@@ -83,14 +87,14 @@ class Adblib:
         self.screenImg = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
 
     def kill(self):
-        subprocess.call([self.adbpath + 'adb', 'kill-server'])
+        subprocess.call([self.adbpath + 'adb', 'kill-server'], timeout=ADB_TIMEOUT_SECONDS)
 
     def start(self, _package):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'am', 'start', '-n', _package])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'am', 'start', '-n', _package], timeout=ADB_TIMEOUT_SECONDS)
 
     def end(self, _package):
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'am', 'force-stop', _package])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'am', 'force-stop', _package], timeout=ADB_TIMEOUT_SECONDS)
 
     def clear(self, _package):
         # キャッシュ削除
-        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'pm', 'clear', _package])
+        subprocess.call([self.adbpath + 'adb', '-s', self.device, 'shell', 'pm', 'clear', _package], timeout=ADB_TIMEOUT_SECONDS)

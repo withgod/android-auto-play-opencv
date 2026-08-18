@@ -2,6 +2,7 @@ import os
 import struct
 import subprocess
 import logging
+from random import uniform
 from time import sleep
 
 import cv2
@@ -10,12 +11,15 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # adbコマンドが端末側の一時的な無応答に巻き込まれて無期限にブロックしないための上限。
-# 通常のinput/screencap系コマンドは1秒未満で完了する。3秒で応答が無い時点で既に異常なので、
-# 1秒間隔で最大5回まで試し、それでも復帰しなければ諦めてAdbTimeoutErrorを投げる
-# (合計待ち時間は3秒×5回+1秒×4回=約19秒で、単発20秒タイムアウトだった旧実装とほぼ同じ)。
-ADB_ATTEMPT_TIMEOUT_SECONDS = 3
-ADB_MAX_ATTEMPTS = 5
-ADB_RETRY_INTERVAL_SECONDS = 1
+# 通常のinput/screencap系コマンドは1秒未満で完了する。2秒で応答が無い時点で既に異常なので、
+# 最大3回まで試し、それでも復帰しなければ諦めてAdbTimeoutErrorを投げる
+# (合計待ち時間は2秒×3回+約0.75秒×2回≒7.5秒)。
+# リトライ間隔は固定値ではなくADB_RETRY_INTERVAL_RANGE_SECONDSの範囲でランダムにする。
+# 複数プロセス/複数デバイスが同時にadb呼び出しをリトライする状況で、固定間隔だと
+# リトライタイミングが揃ってしまい競合が収束しにくくなるため。
+ADB_ATTEMPT_TIMEOUT_SECONDS = 2
+ADB_MAX_ATTEMPTS = 3
+ADB_RETRY_INTERVAL_RANGE_SECONDS = (0.5, 1.0)
 
 
 class AdbTimeoutError(Exception):
@@ -74,7 +78,7 @@ class Adblib:
                 last_exc = e
                 logger.warning('adb command timed out (attempt %d/%d, timeout=%.1fs): %s' % (attempt, ADB_MAX_ATTEMPTS, timeout, cmd))
                 if attempt < ADB_MAX_ATTEMPTS:
-                    sleep(ADB_RETRY_INTERVAL_SECONDS)
+                    sleep(uniform(*ADB_RETRY_INTERVAL_RANGE_SECONDS))
         logger.error('adb command failed after %d attempts: %s' % (ADB_MAX_ATTEMPTS, cmd))
         raise AdbTimeoutError('adb command timed out after %d attempts: %s' % (ADB_MAX_ATTEMPTS, cmd)) from last_exc
 

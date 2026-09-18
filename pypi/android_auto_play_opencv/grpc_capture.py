@@ -25,13 +25,19 @@ def _discovery(device):
             os.kill(pid, 0)
         except (ValueError, OSError):
             continue
-        parser = configparser.ConfigParser()
+        # These discovery files are flat key=value pairs with no [section]
+        # header, which configparser.read() cannot parse directly (it raises
+        # MissingSectionHeaderError). Synthesize one section to reuse it.
         try:
-            parser.read(filename)
-            values = dict(parser.defaults())
-            for section in parser.sections():
-                values.update(parser[section])
-        except (OSError, configparser.Error):
+            with open(filename, encoding='utf-8') as fh:
+                text = fh.read()
+        except OSError:
+            continue
+        parser = configparser.ConfigParser(interpolation=None)
+        try:
+            parser.read_string('[discovery]\n' + text)
+            values = dict(parser['discovery'])
+        except configparser.Error:
             continue
         if values.get('port.serial', '') != serial_port:
             continue

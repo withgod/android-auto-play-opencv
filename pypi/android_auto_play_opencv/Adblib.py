@@ -103,6 +103,15 @@ class Adblib:
 
     def screencap(self):
         # 画面キャプチャ
+        if os.environ.get('AAPO_CAPTURE_BACKEND', 'adb').lower() == 'grpc':
+            try:
+                from .grpc_capture import capture
+                self.screenImg = capture(self.device)
+                return
+            except ImportError as e:
+                logger.warning('gRPC capture unavailable (%s), falling back to adb', e)
+            except Exception as e:
+                logger.warning('gRPC capture failed (%s), falling back to adb', e)
         if os.environ.get('AAPO_RAW_SCREENCAP') == '1':
             try:
                 self._screencap_raw()

@@ -22,6 +22,12 @@ _channels = {}
 # capture() fails fast without touching the network: a grpc endpoint that is
 # down/misconfigured for the whole process shouldn't cost 3 retries x 3s
 # timeout on every single screencap() call for the rest of the run.
+#
+# Deliberately no half-open/reset-after-cooldown: once tripped, a device
+# stays on adb for the rest of the process. Fine for the normal one-job-
+# one-process model; a long-lived process (e.g. `pochi2 -n 360`) that hits
+# 5 transient failures in a row will fall back to adb for its remainder
+# too, which is the safe direction to fail in.
 _consecutive_failures = {}
 
 

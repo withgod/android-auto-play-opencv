@@ -23,11 +23,16 @@ setup(
     # 使う場合だけ必要。`pip install android_auto_play_opencv[grpc]`
     extras_require={'grpc': ['grpcio>=1.74.0', 'protobuf>=6.31.1']},
 
-    author='noita',  # パッケージ作者の名前
-    author_email='noitalog.tokyo@gmail.com',  # パッケージ作者の連絡先メールアドレス
+    author='noita',  # 元の作者(オリジナル、連絡不可のため変更しない)
+    author_email='noitalog.tokyo@gmail.com',
+
+    # 現在のフォーク管理者。元の作者アカウントは全て消失しており連絡不能なため、
+    # author側は変更せず、こちらに現メンテナ情報を追加する。
+    maintainer='withgod',
+    maintainer_email='noname@withgod.jp',
 
     # パッケージに関連するサイトのURL(GitHubなど)
-    url='https://github.com/noitaro/android-auto-play-opencv',
+    url='https://github.com/withgod/android-auto-play-opencv',
 
     description='Operate Android using OpenCV.',  # パッケージの簡単な説明
     long_description=long_description,  # PyPIに'Project description'として表示されるパッケージの説明文

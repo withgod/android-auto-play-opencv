@@ -8,11 +8,34 @@ import configparser
 import glob
 import logging
 import os
+import platform
 
 logger = logging.getLogger(__name__)
 EXPECTED_SIZE = (1080, 2400)
-DISCOVERY_GLOB = os.path.expanduser('~/Library/Caches/TemporaryItems/avd/running/pid_*.ini')
 CIRCUIT_BREAKER_THRESHOLD = 5
+
+
+def _discovery_globs():
+    """Candidate glob patterns for the emulator's pid_<PID>.ini discovery
+    files, which live in a platform-specific temp location.
+
+    Set AAPO_GRPC_DISCOVERY_DIR to override outright. The macOS path is
+    confirmed against a live emulator; the other platforms are unverified
+    best-effort guesses (this project's dev environment is macOS-only) - if
+    discovery never finds anything, capture() just falls back to adb, so a
+    wrong guess degrades safely rather than breaking anything.
+    """
+    override = os.environ.get('AAPO_GRPC_DISCOVERY_DIR')
+    if override:
+        return [os.path.join(override, 'pid_*.ini')]
+    system = platform.system()
+    if system == 'Darwin':
+        return [os.path.expanduser('~/Library/Caches/TemporaryItems/avd/running/pid_*.ini')]
+    if system == 'Linux':
+        tmp = os.environ.get('TMPDIR', '/tmp')
+        user = os.environ.get('USER', '*')
+        return [os.path.join(tmp, 'android-%s' % user, 'avd', 'running', 'pid_*.ini')]
+    return []
 
 # One channel per device, reused across calls in this process (para.sh runs
 # one process per device, so a module-level cache is sufficient). Dropped
@@ -33,7 +56,8 @@ _consecutive_failures = {}
 
 def _discovery(device):
     serial_port = device.rsplit('-', 1)[-1] if device.startswith('emulator-') else ''
-    for filename in glob.glob(DISCOVERY_GLOB):
+    filenames = [f for pattern in _discovery_globs() for f in glob.glob(pattern)]
+    for filename in filenames:
         try:
             pid = int(os.path.basename(filename)[4:-4])
             os.kill(pid, 0)

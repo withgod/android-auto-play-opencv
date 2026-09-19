@@ -20,7 +20,7 @@ def _discovery_globs():
     files, which live in a platform-specific temp location.
 
     Set AAPO_GRPC_DISCOVERY_DIR to override outright. The macOS path is
-    confirmed against a live emulator; the other platforms are unverified
+    confirmed against a live emulator; Linux/Windows are unverified
     best-effort guesses (this project's dev environment is macOS-only) - if
     discovery never finds anything, capture() just falls back to adb, so a
     wrong guess degrades safely rather than breaking anything.
@@ -35,14 +35,20 @@ def _discovery_globs():
         tmp = os.environ.get('TMPDIR', '/tmp')
         user = os.environ.get('USER', '*')
         return [os.path.join(tmp, 'android-%s' % user, 'avd', 'running', 'pid_*.ini')]
-    # No known default for Windows (or anything else). This is deliberate,
-    # not an oversight: the EmulatorController gRPC service this backend
-    # talks to is specific to the official Android Emulator (AVD) - it is
-    # not something third-party emulators such as NoxPlayer expose, and
-    # this package is commonly used with those on Windows. Guessing a path
-    # there would be actively misleading rather than just incomplete.
-    # AAPO_CAPTURE_BACKEND=grpc always falls back to plain adb in that case;
-    # set AAPO_GRPC_DISCOVERY_DIR explicitly if your setup does expose one.
+    if system == 'Windows':
+        # Unverified best guess, same as the Linux path above (no Windows
+        # dev environment to confirm against). This is about not knowing
+        # the discovery directory, not about Windows lacking gRPC support:
+        # EmulatorController is a feature of the official Android Emulator
+        # binary itself, so it should exist on Windows the same as on
+        # macOS/Linux. What never has it, on any OS, is a third-party
+        # emulator such as NoxPlayer - those aren't the official emulator
+        # at all and don't run this service; AAPO_CAPTURE_BACKEND=grpc just
+        # falls back to adb for them, which is expected, not a bug.
+        tmp = os.environ.get('TEMP') or os.environ.get('TMP') or r'C:\Windows\Temp'
+        return [os.path.join(tmp, 'avd', 'running', 'pid_*.ini')]
+    # Unknown platform: no guess to make. AAPO_CAPTURE_BACKEND=grpc falls
+    # back to plain adb; set AAPO_GRPC_DISCOVERY_DIR explicitly if needed.
     return []
 
 # One channel per device, reused across calls in this process (para.sh runs

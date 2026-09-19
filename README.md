@@ -6,18 +6,20 @@ See [README-ja.md](README-ja.md) for the full documentation (Japanese only).
 
 ## Install
 
+This fork isn't published to PyPI (the `android_auto_play_opencv` package there is the unmaintained original), so install straight from this repository:
+
 ```
-pip install android_auto_play_opencv
+pip install "git+https://github.com/withgod/android-auto-play-opencv.git#egg=android_auto_play_opencv&subdirectory=pypi"
 ```
 
 Requires [Android SDK Platform-Tools](https://developer.android.com/studio/releases/platform-tools) (`adb`/`adb.exe`) on your `PATH` or passed in explicitly.
 
 ### Optional: gRPC screenshot backend
 
-An opt-in faster screenshot path is available for the official Android Emulator (AVD), using its built-in EmulatorController gRPC service instead of `adb exec-out screencap`. It is not available for third-party emulators (e.g. NoxPlayer), which don't expose this service; those always use the default `adb` path.
+An opt-in faster screenshot path is available for the official Android Emulator (AVD), using its built-in EmulatorController gRPC service instead of `adb exec-out screencap`. It is not available for third-party emulators (e.g. NoxPlayer), which don't run the official emulator at all and so don't expose this service regardless of OS; those always use the default `adb` path.
 
 ```
-pip install "android_auto_play_opencv[grpc]"
+pip install "android_auto_play_opencv[grpc] @ git+https://github.com/withgod/android-auto-play-opencv.git#subdirectory=pypi"
 ```
 
 Enable it with the `AAPO_CAPTURE_BACKEND=grpc` environment variable. If it can't find or reach the emulator's gRPC endpoint, it automatically falls back to `adb`.

@@ -19,6 +19,10 @@ setup(
     # pip installする際に同時にインストールされるパッケージ名をリスト形式で指定
     install_requires=['opencv-python', 'numpy'],
 
+    # AAPO_CAPTURE_BACKEND=grpc（公式Android Emulatorのgetscreenshot経由のscreenshot取得）を
+    # 使う場合だけ必要。`pip install android_auto_play_opencv[grpc]`
+    extras_require={'grpc': ['grpcio>=1.74.0', 'protobuf>=6.31.1']},
+
     author='noita',  # パッケージ作者の名前
     author_email='noitalog.tokyo@gmail.com',  # パッケージ作者の連絡先メールアドレス
 

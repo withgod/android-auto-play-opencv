@@ -35,6 +35,14 @@ def _discovery_globs():
         tmp = os.environ.get('TMPDIR', '/tmp')
         user = os.environ.get('USER', '*')
         return [os.path.join(tmp, 'android-%s' % user, 'avd', 'running', 'pid_*.ini')]
+    # No known default for Windows (or anything else). This is deliberate,
+    # not an oversight: the EmulatorController gRPC service this backend
+    # talks to is specific to the official Android Emulator (AVD) - it is
+    # not something third-party emulators such as NoxPlayer expose, and
+    # this package is commonly used with those on Windows. Guessing a path
+    # there would be actively misleading rather than just incomplete.
+    # AAPO_CAPTURE_BACKEND=grpc always falls back to plain adb in that case;
+    # set AAPO_GRPC_DISCOVERY_DIR explicitly if your setup does expose one.
     return []
 
 # One channel per device, reused across calls in this process (para.sh runs

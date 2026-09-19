@@ -13,6 +13,13 @@ class MatchTemplateLib():
     
     #類似度の設定(0~1)
     THRESHOLD = 0.8
+
+    def __init__(self):
+        # Keep the source bytes alive while the decoded image is cached.  Using
+        # object identity here is intentional: a new screencap produces a new
+        # bytes object even when its contents happen to be identical.
+        self._decoded_source = None
+        self._decoded_gray = None
     
     def matchTemplate(self, _img, _temp, _screenshot = None, _threshold = None):
         """
@@ -41,7 +48,11 @@ class MatchTemplateLib():
         elif isinstance(_img, numpy.ndarray):
             self.img = cv2.cvtColor(_img, cv2.COLOR_BGR2GRAY) if _img.ndim == 3 else _img
         else:
-            self.img = cv2.imdecode(numpy.frombuffer(_img, numpy.uint8), 0)
+            if self._decoded_source is not _img:
+                self._decoded_source = _img
+                self._decoded_gray = cv2.imdecode(
+                    numpy.frombuffer(_img, numpy.uint8), 0)
+            self.img = self._decoded_gray
 
         self.temp = cv2.imread(_temp, 0)
         if self.temp is None:

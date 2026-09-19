@@ -64,8 +64,13 @@ class AapoManager:
             Threshold for whether template images are included
         """
 
-        # 曖昧画像検索
-        self.mtl.matchTemplate(self.adbl.screenImg , _temp, _threshold=_threshold)
+        # 曖昧画像検索。呼び出し元が画面デコードを共有できる場合は
+        # ndarrayを渡し、MatchTemplateLib側でのbytesデコードを省略する。
+        screen_img = self.adbl.screenImg
+        decode_screen = getattr(self, '_decode_screen', None)
+        if callable(decode_screen):
+            screen_img = decode_screen(screen_img)
+        self.mtl.matchTemplate(screen_img, _temp, _threshold=_threshold)
         
         # 類似度閾値超え判定
         result = self.mtl.judgeMatching(_threshold=_threshold)
@@ -93,7 +98,11 @@ class AapoManager:
 
         if _screenshot is None:
             # 曖昧画像検索
-            self.mtl.matchTemplate(self.adbl.screenImg , _temp, _threshold=_threshold)
+            screen_img = self.adbl.screenImg
+            decode_screen = getattr(self, '_decode_screen', None)
+            if callable(decode_screen):
+                screen_img = decode_screen(screen_img)
+            self.mtl.matchTemplate(screen_img, _temp, _threshold=_threshold)
         else:
             self.mtl.matchTemplate(None , _temp, _screenshot, _threshold=_threshold)
         
@@ -173,8 +182,3 @@ class AapoManager:
         else:
             with open(fileName, mode='wb') as f:
                 f.write(img)
-
-
-        
-
-            
